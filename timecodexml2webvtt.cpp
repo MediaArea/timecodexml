@@ -22,9 +22,9 @@ SOFTWARE.
 
 #include "tfsxml.h"
 #include "TimeCode.h"
-#include <climits>
 #include <fstream>
 #include <iostream>
+#include <limits>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -89,7 +89,7 @@ int main(int argc, char* argv[])
     ifstream input_file(argv[1]);
     input_file.seekg(0, std::ios::end);
     auto input_size = input_file.tellg();
-    if (!input_size || input_size > INT_MAX) {
+    if (input_size <= 0 || (size_t)input_size > numeric_limits<size_t>::max()) {
         return 1;
     }
     input_file.seekg(0);
@@ -144,7 +144,15 @@ int main(int argc, char* argv[])
                             {
                                 return 1;
                             }
-                            stream.timecode.SetFramesMax((new_frame_rate_num + new_frame_rate_den - 1) / new_frame_rate_den);
+                            auto FramesMax = (new_frame_rate_num + new_frame_rate_den - 1) / new_frame_rate_den;
+                            if (!FramesMax) {
+                                return 1;
+                            }
+                            FramesMax--;
+                            if (FramesMax >= numeric_limits<uint32_t>::max()) {
+                                return 1;
+                            }
+                            stream.timecode.SetFramesMax((uint32_t)FramesMax);
                         }
                         if (!tfsxml_strcmp_charp(n, "id")) {
                             if (track_index == -1) {
@@ -217,6 +225,7 @@ int main(int argc, char* argv[])
         }
         output += '\n';
     }
+    delete[] input;
 
     cout << output;
     return 0;
