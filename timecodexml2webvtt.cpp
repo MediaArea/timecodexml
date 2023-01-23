@@ -85,19 +85,25 @@ int main(int argc, char* argv[])
             ;
         return 1;
     }
-    size_t track_index = argc > 2 ? stoul(argv[2]) : -1;
+    size_t track_index = argc > 2 ? stoul(argv[2]) : (size_t) - 1;
     ifstream input_file(argv[1]);
     input_file.seekg(0, std::ios::end);
     auto input_size = input_file.tellg();
     if (input_size <= 0 || (size_t)input_size > numeric_limits<size_t>::max()) {
+        cerr << "Error: input file too big\n";
         return 1;
     }
     input_file.seekg(0);
     auto input = new char[input_size];
-    input_file.read(input, input_size);
+    if (!input_file.read(input, input_size).eof()) {
+        cerr << "Error: can not read the file in full\n";
+        return 1;
+    }
+    input_file.close();
 
     tfsxml_string xml_handle, n, v;
     if (tfsxml_init(&xml_handle, input, (int)input_size)) {
+        cerr << "Error: issue when parsing the XML input file\n";
         return 1;
     }
     uint64_t time_stamp_inc = 0;
@@ -142,14 +148,17 @@ int main(int argc, char* argv[])
                             }
                             else if (new_frame_rate_num != time_stamp_den || new_frame_rate_den != time_stamp_inc)
                             {
+                                cerr << "Error: issue when parsing the frame_rate attribute\n";
                                 return 1;
                             }
                             auto FramesMax = (new_frame_rate_num + new_frame_rate_den - 1) / new_frame_rate_den;
                             if (!FramesMax) {
+                                cerr << "Error: issue when parsing the frame_rate attribute\n";
                                 return 1;
                             }
                             FramesMax--;
                             if (FramesMax >= numeric_limits<uint32_t>::max()) {
+                                cerr << "Error: issue when parsing the frame_rate attribute\n";
                                 return 1;
                             }
                             stream.timecode.SetFramesMax((uint32_t)FramesMax);
@@ -166,9 +175,11 @@ int main(int argc, char* argv[])
                     if (!stream.timecode.GetIsValid()) {
                         stream.xml_handle = xml_handle;
                         if (tfsxml_enter(&stream.xml_handle)) {
+                            cerr << "Error: issue when parsing the XML input file\n";
                             return 1;
                         }
                         if (tfsxml_next(&stream.xml_handle, &stream.n)) {
+                            cerr << "Error: issue when parsing the XML input file\n";
                             return 1;
                         }
                     }
@@ -187,6 +198,7 @@ int main(int argc, char* argv[])
         }
     }
     if (!time_stamp_inc || !time_stamp_den) {
+        cerr << "Error: frame rate is missing or not same for all tracks\n";
         return 1;
     }
 
