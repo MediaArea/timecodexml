@@ -102,25 +102,30 @@ int main(int argc, char* argv[])
     uint64_t time_stamp_den = 0;
     uint64_t time_stamp_num = 0;
     vector<stream_struct> streams;
-    size_t active_stream_count=0;
+    string output("WEBVTT\n");
     while (!tfsxml_next(&xml_handle, &n)) {
         if (!tfsxml_strcmp_charp(n, "timecode_streams")) {
             tfsxml_enter(&xml_handle);
             while (!tfsxml_next(&xml_handle, &n)) {
                 if (!tfsxml_strcmp_charp(n, "timecode_stream")) {
+                    output += "\nNOTE";
                     stream_struct stream;
                     while (!tfsxml_attr(&xml_handle, &n, &v)) {
+                        output += ' ';
+                        output += tfsxml_decode(n);
+                        output += '=';
+                        auto value = tfsxml_decode(v);
+                        output += value;
                         if (!tfsxml_strcmp_charp(n, "frame_count")) {
-                            stream.frame_count = atoll(tfsxml_decode(v).c_str());
+                            stream.frame_count = atoll(value.c_str());
                         }
                         if (!tfsxml_strcmp_charp(n, "frame_rate")) {
-                            string new_frame_rate = tfsxml_decode(v);
                             size_t new_frame_rate_div;
-                            auto new_frame_rate_num = stoull(new_frame_rate, &new_frame_rate_div);
+                            auto new_frame_rate_num = stoull(value, &new_frame_rate_div);
                             unsigned long long new_frame_rate_den;
-                            if (new_frame_rate_div < new_frame_rate.size() && new_frame_rate[new_frame_rate_div] == '/') {
+                            if (new_frame_rate_div < value.size() && value[new_frame_rate_div] == '/') {
                                 new_frame_rate_div++;
-                                new_frame_rate_den = stoull(new_frame_rate.substr(new_frame_rate_div));
+                                new_frame_rate_den = stoull(value.substr(new_frame_rate_div));
                             }
                             else {
                                 new_frame_rate_den = 1;
@@ -136,10 +141,10 @@ int main(int argc, char* argv[])
                             stream.timecode.SetFramesMax((new_frame_rate_num + new_frame_rate_den - 1) / new_frame_rate_den);
                         }
                         if (!tfsxml_strcmp_charp(n, "id")) {
-                            stream.id = tfsxml_decode(v).c_str();
+                            stream.id = value;
                         }
                         if (!tfsxml_strcmp_charp(n, "start_tc")) {
-                            stream.timecode.FromString(tfsxml_decode(v));
+                            stream.timecode.FromString(value);
                         }
                     }
                     if (!stream.timecode.GetIsValid()) {
@@ -165,8 +170,8 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    string output("WEBVTT\n");
-    active_stream_count = streams.size();
+    output += '\n';
+    auto active_stream_count = streams.size();
     while (active_stream_count) {
         output += '\n';
         AddTimeStamp(output, time_stamp_num, time_stamp_den);
