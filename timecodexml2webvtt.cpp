@@ -85,7 +85,7 @@ int main(int argc, char* argv[])
             ;
         return 1;
     }
-    size_t track_index = argc > 2 ? stoul(argv[2]) : -1;
+    size_t track_index = argc > 2 ? stoul(argv[2]) : (size_t) - 1;
     ifstream input_file(argv[1]);
     input_file.seekg(0, std::ios::end);
     auto input_size = input_file.tellg();
