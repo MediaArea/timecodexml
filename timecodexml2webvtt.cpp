@@ -76,14 +76,16 @@ void AddTimeStamp(string& content, uint64_t num, uint64_t den)
 
 int main(int argc, char* argv[]) 
 {
-    if (argc != 2) {
+    if (argc < 2 || argc > 3) {
         cout <<
             "Usage: \n"
-            << argv[0] << " file_name\n"
+            << argv[0] << " file_name [track_index]\n"
             " file_name: Timecode XML file from MediaInfo\n"
+            " track_index: 0-based track index for outputting only 1 track\n"
             ;
         return 1;
     }
+    size_t track_index = argc > 2 ? stoul(argv[2]) : -1;
     ifstream input_file(argv[1]);
     input_file.seekg(0, std::ios::end);
     auto input_size = input_file.tellg();
@@ -103,11 +105,15 @@ int main(int argc, char* argv[])
     uint64_t time_stamp_num = 0;
     vector<stream_struct> streams;
     string output("WEBVTT\n");
+    size_t stream_pos = 0;
     while (!tfsxml_next(&xml_handle, &n)) {
         if (!tfsxml_strcmp_charp(n, "timecode_streams")) {
             tfsxml_enter(&xml_handle);
             while (!tfsxml_next(&xml_handle, &n)) {
                 if (!tfsxml_strcmp_charp(n, "timecode_stream")) {
+                    if (track_index != -1 && track_index != stream_pos++) {
+                        continue;
+                    }
                     output += "\nNOTE";
                     stream_struct stream;
                     while (!tfsxml_attr(&xml_handle, &n, &v)) {
@@ -141,7 +147,9 @@ int main(int argc, char* argv[])
                             stream.timecode.SetFramesMax((new_frame_rate_num + new_frame_rate_den - 1) / new_frame_rate_den);
                         }
                         if (!tfsxml_strcmp_charp(n, "id")) {
-                            stream.id = value;
+                            if (track_index == -1) {
+                                stream.id = value;
+                            }
                         }
                         if (!tfsxml_strcmp_charp(n, "start_tc")) {
                             stream.timecode.FromString(value);
@@ -156,11 +164,15 @@ int main(int argc, char* argv[])
                             return 1;
                         }
                     }
-                    if (stream.id.size() < 40) {
-                        stream.id.insert(stream.id.begin(), 40 - stream.id.size(), ' ');
+                    if (track_index == -1) {
+                        if (stream.id.size() < 40) {
+                            stream.id.insert(stream.id.begin(), 40 - stream.id.size(), ' ');
+                        }
                     }
                     stream.id.insert(stream.id.begin(), 1, '\n');
-                    stream.id += ": ";
+                    if (track_index == -1) {
+                        stream.id += ": ";
+                    }
                     streams.push_back(stream);
                 }
             }
