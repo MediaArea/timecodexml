@@ -86,8 +86,7 @@ int main(int argc, char* argv[])
         return 1;
     }
     size_t track_index = argc > 2 ? stoul(argv[2]) : (size_t) - 1;
-    ifstream input_file(argv[1]);
-    input_file.seekg(0, std::ios::end);
+    ifstream input_file(argv[1], ios_base::in | ios_base::ate | ios_base::binary);
     auto input_size = input_file.tellg();
     if (input_size <= 0 || (size_t)input_size > numeric_limits<size_t>::max()) {
         cerr << "Error: input file too big\n";
@@ -95,7 +94,7 @@ int main(int argc, char* argv[])
     }
     input_file.seekg(0);
     auto input = new char[input_size];
-    if (!input_file.read(input, input_size).eof()) {
+    if (input_file.read(input, input_size).fail()) {
         cerr << "Error: can not read the file in full\n";
         return 1;
     }
