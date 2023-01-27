@@ -39,6 +39,13 @@
                 </xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>
+        <xsd:attribute name="full" type="xsd:integer">
+            <xsd:annotation>
+                <xsd:documentation xml:lang="en">
+                    This binary attribute notes if the evaluation of the MediaTimecode document considered the full source file or not. If full=0 then the timecode data only summarizes what can be known in a quick evaluation. If full=1 (as would happen when running 'mediainfo --ParseSpeed=1 --Output=TimecodeXML'), then the document is made from a full file evaluation so each timecode value, supported by this output, is parsed and represented in the document.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
     </xsd:complexType>
     <xsd:complexType name="timecode_streamType">
         <xsd:sequence>
