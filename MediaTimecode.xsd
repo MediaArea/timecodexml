@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="https://mediaarea.net/mediatimecode" targetNamespace="https://mediaarea.net/mediatimecode" elementFormDefault="qualified">
+    <xsd:annotation>
+        <xsd:documentation>
+            Developed in 2022-2023.
+        </xsd:documentation>
+    </xsd:annotation>
+    <xsd:element name="MediaTimecode" type="MediaTimecodeType"/>
+    <xsd:complexType name="MediaTimecodeType">
+        <xsd:sequence>
+            <xsd:element name="creatingApplication" type="creationType" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="creatingLibrary" type="creationType" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="media" type="mediaType" minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence>
+        <xsd:attribute name="version"/>
+    </xsd:complexType>
+    <xsd:complexType name="creationType">
+        <xsd:simpleContent>
+            <xsd:extension base="xsd:string">
+                <xsd:attributeGroup ref="creationAttributeSet"/>
+            </xsd:extension>
+        </xsd:simpleContent>
+    </xsd:complexType>
+    <xsd:complexType name="mediaType">
+        <xsd:sequence>
+            <xsd:element name="timecode_stream" type="timecode_streamType" minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence>
+        <xsd:attribute name="ref" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation xml:lang="en">
+                    Reference to the original file path.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="format" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation xml:lang="en">
+                    Format of the file, for example DV, AVI, MPEG-4.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="full" type="xsd:integer">
+            <xsd:annotation>
+                <xsd:documentation xml:lang="en">
+                    This binary attribute notes if the evaluation of the MediaTimecode document considered the full source file or not. If full=0 then the timecode data only summarizes what can be known in a quick evaluation. If full=1 (as would happen when running 'mediainfo --ParseSpeed=1 --Output=TimecodeXML'), then the document is made from a full file evaluation so each timecode value, supported by this output, is parsed and represented in the document.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+    <xsd:complexType name="timecode_streamType">
+        <xsd:sequence>
+            <xsd:element name="tc" type="tcType" minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence>
+        <xsd:attribute name="id" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation xml:lang="en">
+                    A unique container-specific identifer for the timecode stream.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="format" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation xml:lang="en">
+                    The format of the timecode stream, such as smpte-st377, smpte-st311.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="frame_rate" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation xml:lang="en">
+                    The frame_rate of the timecode stream, such as 25, 30000/1001, 50, etc.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="frame_count" type="xsd:integer">
+            <xsd:annotation>
+                <xsd:documentation xml:lang="en">
+                    The number of timecode values in the timecode stream. Typically this is equal to the number of video frames, but not always.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="start_tc" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation xml:lang="en">
+                    For timecode tracks that only store an initial value and incrementation details, this attribute holds the initial value in HH:MM:SS[:;]FF format, else the initial value is store within the first tc sub-element.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="fp" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation xml:lang="en">
+                    The field phase value for the timecode stream.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="bgf" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation xml:lang="en">
+                    The binary group flag value for the timecode stream.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="bg" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation xml:lang="en">
+                    The binary group value of the timecode track.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+    <xsd:complexType name="tcType">
+        <xsd:attribute name="v" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation xml:lang="en">
+                    The value of the timecode for that position in the timecode stream.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="nc" type="xsd:integer" default="0">
+            <xsd:annotation>
+                <xsd:documentation xml:lang="en">
+                    This value notes a discontinuous timecode value. If set to 1, then the timecode value does not follow the declared incrememntation pattern from the previous timecode value.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="fp" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation xml:lang="en">
+                    The field phase value for the timecode value. Only expressed if not equal to the stated value of the timecode_stream.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="bgf" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation xml:lang="en">
+                    The binary group flag value for the timecode value. Only expressed if not equal to the stated value of the timecode_stream.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="bg" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation xml:lang="en">
+                    The binary group value of the timecode value. Only expressed if not equal to the stated value of the timecode_stream.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+    <xsd:attributeGroup name="creationAttributeSet">
+        <xsd:attribute name="version" type="xsd:string" use="required"/>
+        <xsd:attribute name="url" type="xsd:string"/>
+        <xsd:attribute name="build_date" type="xsd:string"/>
+        <xsd:attribute name="build_time" type="xsd:string"/>
+        <xsd:attribute name="compiler_ident" type="xsd:string"/>
+    </xsd:attributeGroup>
+</xsd:schema>
