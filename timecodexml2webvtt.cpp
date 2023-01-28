@@ -109,89 +109,95 @@ int main(int argc, char* argv[])
     uint64_t time_stamp_den = 0;
     uint64_t time_stamp_num = 0;
     vector<stream_struct> streams;
-    string output("WEBVTT\n");
+    string output;
     size_t stream_pos = 0;
     while (!tfsxml_next(&xml_handle, &n)) {
-        if (!tfsxml_strcmp_charp(n, "timecode_streams")) {
+        if (!tfsxml_strcmp_charp(n, "MediaTimecode")) {
             tfsxml_enter(&xml_handle);
             while (!tfsxml_next(&xml_handle, &n)) {
-                if (!tfsxml_strcmp_charp(n, "timecode_stream")) {
-                    if (track_index != -1 && track_index != stream_pos++) {
-                        continue;
-                    }
-                    output += "\nNOTE";
-                    stream_struct stream;
-                    while (!tfsxml_attr(&xml_handle, &n, &v)) {
-                        output += ' ';
-                        output += tfsxml_decode(n);
-                        output += '=';
-                        auto value = tfsxml_decode(v);
-                        output += value;
-                        if (!tfsxml_strcmp_charp(n, "frame_count")) {
-                            stream.frame_count = atoll(value.c_str());
-                        }
-                        if (!tfsxml_strcmp_charp(n, "frame_rate")) {
-                            size_t new_frame_rate_div;
-                            auto new_frame_rate_num = stoull(value, &new_frame_rate_div);
-                            unsigned long long new_frame_rate_den;
-                            if (new_frame_rate_div < value.size() && value[new_frame_rate_div] == '/') {
-                                new_frame_rate_div++;
-                                new_frame_rate_den = stoull(value.substr(new_frame_rate_div));
+                if (!tfsxml_strcmp_charp(n, "media")) {
+                    output += "WEBVTT\n";
+                    tfsxml_enter(&xml_handle);
+                    while (!tfsxml_next(&xml_handle, &n)) {
+                        if (!tfsxml_strcmp_charp(n, "timecode_stream")) {
+                            if (track_index != -1 && track_index != stream_pos++) {
+                                continue;
                             }
-                            else {
-                                new_frame_rate_den = 1;
+                            output += "\nNOTE";
+                            stream_struct stream;
+                            while (!tfsxml_attr(&xml_handle, &n, &v)) {
+                                output += ' ';
+                                output += tfsxml_decode(n);
+                                output += '=';
+                                auto value = tfsxml_decode(v);
+                                output += value;
+                                if (!tfsxml_strcmp_charp(n, "frame_count")) {
+                                    stream.frame_count = atoll(value.c_str());
+                                }
+                                if (!tfsxml_strcmp_charp(n, "frame_rate")) {
+                                    size_t new_frame_rate_div;
+                                    auto new_frame_rate_num = stoull(value, &new_frame_rate_div);
+                                    unsigned long long new_frame_rate_den;
+                                    if (new_frame_rate_div < value.size() && value[new_frame_rate_div] == '/') {
+                                        new_frame_rate_div++;
+                                        new_frame_rate_den = stoull(value.substr(new_frame_rate_div));
+                                    }
+                                    else {
+                                        new_frame_rate_den = 1;
+                                    }
+                                    if (!time_stamp_inc && !time_stamp_den) {
+                                        time_stamp_den = new_frame_rate_num;
+                                        time_stamp_inc = new_frame_rate_den;
+                                    }
+                                    else if (new_frame_rate_num != time_stamp_den || new_frame_rate_den != time_stamp_inc)
+                                    {
+                                        cerr << "Error: issue when parsing the frame_rate attribute\n";
+                                        return 1;
+                                    }
+                                    auto FramesMax = (new_frame_rate_num + new_frame_rate_den - 1) / new_frame_rate_den;
+                                    if (!FramesMax) {
+                                        cerr << "Error: issue when parsing the frame_rate attribute\n";
+                                        return 1;
+                                    }
+                                    FramesMax--;
+                                    if (FramesMax >= numeric_limits<uint32_t>::max()) {
+                                        cerr << "Error: issue when parsing the frame_rate attribute\n";
+                                        return 1;
+                                    }
+                                    stream.timecode.SetFramesMax((uint32_t)FramesMax);
+                                }
+                                if (!tfsxml_strcmp_charp(n, "id")) {
+                                    if (track_index == -1) {
+                                        stream.id = value;
+                                    }
+                                }
+                                if (!tfsxml_strcmp_charp(n, "start_tc")) {
+                                    stream.timecode.FromString(value);
+                                }
                             }
-                            if (!time_stamp_inc && !time_stamp_den) {
-                                time_stamp_den = new_frame_rate_num;
-                                time_stamp_inc = new_frame_rate_den;
+                            if (!stream.timecode.GetIsValid()) {
+                                stream.xml_handle = xml_handle;
+                                if (tfsxml_enter(&stream.xml_handle)) {
+                                    cerr << "Error: issue when parsing the XML input file\n";
+                                    return 1;
+                                }
+                                if (tfsxml_next(&stream.xml_handle, &stream.n)) {
+                                    cerr << "Error: issue when parsing the XML input file\n";
+                                    return 1;
+                                }
                             }
-                            else if (new_frame_rate_num != time_stamp_den || new_frame_rate_den != time_stamp_inc)
-                            {
-                                cerr << "Error: issue when parsing the frame_rate attribute\n";
-                                return 1;
-                            }
-                            auto FramesMax = (new_frame_rate_num + new_frame_rate_den - 1) / new_frame_rate_den;
-                            if (!FramesMax) {
-                                cerr << "Error: issue when parsing the frame_rate attribute\n";
-                                return 1;
-                            }
-                            FramesMax--;
-                            if (FramesMax >= numeric_limits<uint32_t>::max()) {
-                                cerr << "Error: issue when parsing the frame_rate attribute\n";
-                                return 1;
-                            }
-                            stream.timecode.SetFramesMax((uint32_t)FramesMax);
-                        }
-                        if (!tfsxml_strcmp_charp(n, "id")) {
                             if (track_index == -1) {
-                                stream.id = value;
+                                if (stream.id.size() < 40) {
+                                    stream.id.insert(stream.id.begin(), 40 - stream.id.size(), ' ');
+                                }
                             }
-                        }
-                        if (!tfsxml_strcmp_charp(n, "start_tc")) {
-                            stream.timecode.FromString(value);
-                        }
-                    }
-                    if (!stream.timecode.GetIsValid()) {
-                        stream.xml_handle = xml_handle;
-                        if (tfsxml_enter(&stream.xml_handle)) {
-                            cerr << "Error: issue when parsing the XML input file\n";
-                            return 1;
-                        }
-                        if (tfsxml_next(&stream.xml_handle, &stream.n)) {
-                            cerr << "Error: issue when parsing the XML input file\n";
-                            return 1;
+                            stream.id.insert(stream.id.begin(), 1, '\n');
+                            if (track_index == -1) {
+                                stream.id += ": ";
+                            }
+                            streams.push_back(stream);
                         }
                     }
-                    if (track_index == -1) {
-                        if (stream.id.size() < 40) {
-                            stream.id.insert(stream.id.begin(), 40 - stream.id.size(), ' ');
-                        }
-                    }
-                    stream.id.insert(stream.id.begin(), 1, '\n');
-                    if (track_index == -1) {
-                        stream.id += ": ";
-                    }
-                    streams.push_back(stream);
                 }
             }
         }
