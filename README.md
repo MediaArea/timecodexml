@@ -25,7 +25,7 @@ This document represents one or many timecode tracks. There are two primary type
 
 The structure and semantics of TimecodeXML are documented in a [MediaTimecode XML Schema](MediaTimecode.xsd).
 
-## How to make MediaTimecode XML
+### How to make MediaTimecode XML
 
 Using Mediainfo daily builds from 2023-01-27 or later run:
 
@@ -33,19 +33,19 @@ Using Mediainfo daily builds from 2023-01-27 or later run:
 
 Note: adding `--ParseSpeed=1` means that mediainfo will read through all the timecode data of the file to represent supported timecode tracks completely in the XML output. Without `--ParseSpeed=0`, the XML output will only include encough information as can be gathered in a quick scan. The resulting XML will represent if this evaluation was full or not in the `@full` attribute.
 
-### MediaTimecode VTT
+## MediaTimecode VTT
 
-#### Introduction to MediaTimecode VTT
+### Introduction to MediaTimecode VTT
 
 While the number of applications that support a presentation of a timecode stream are limited, there is an abundance of media tools that support the presentation of subtitle tracks. As such, in order to make timecode data, more accessible, MediaTimecode XML may be transformed into MediaTimecode VTT, which presents the same data as a subtitle format using the tool, `timecodexml2webvtt`.
 
 The resulting WebVTT subtitle file can be embedded into media files or accessed in many players as a sidecar file of the media file it represents.
 
-#### How to make timecodexml2webvtt
+### How to make timecodexml2webvtt
 
 Checkout the timecodexml repository (this one) and run `make`.
 
-### How to convert MediaTimecode XML to VTT.
+## How to convert MediaTimecode XML to VTT.
 
 `timecodexml2webvtt tc.xml > tc.vtt`
 
