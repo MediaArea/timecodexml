@@ -49,6 +49,14 @@ Checkout the timecodexml repository (this one) and run `make`.
 
 `timecodexml2webvtt tc.xml > tc.vtt`
 
+## Recommendations for storing MediaTimecode subtitle data in an audiovisual container
+
+The authors propose the following recommendations when muxing MediaTimecode VTT into an audiovisual container.
+
+- Set the language code to non-lingual content. Within ISO 639-2, ISO 639-3, and [IETF BCP47](https://www.ietf.org/rfc/bcp/bcp47.txt), the code `zxx` is defined for subtitles with no linguistic content. In ffmpeg this language tag can be added to the muxer with the command `-metadata:s:s:0 language=zxx` (presuming that the MediaTimecode VTT subtitle is the first subtitle referenced, aka the `0` in the stream reference of `s:s:0`.
+
+- Set the title of the subtitle to `MediaTimecode`. Such labelling standardizes the use of the MediaTimecode subtitle and may make it easier for other future parsers to understand that this subtitle track is used to store and make accessible timecode data. In ffmpeg, such a title can be added to the first subtitle track sent to the muxer with `-metadata:s:s:0 title="MediaTimecode"`.
+
 ## Example Workflow
 
 Here is an example of:
