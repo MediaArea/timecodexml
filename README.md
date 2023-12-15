@@ -65,7 +65,7 @@ Here is an example of:
 - rewrapping the audiovisual streams of the MXF file plus the MediaTimecode VTT into a new Matroska file
 
 ```
-mediainfo --ParseSpeed=1 Output=TimecodeXML fun-movie.mxf > fun-movie.xml
+mediainfo --ParseSpeed=1 --Output=TimecodeXML fun-movie.mxf > fun-movie.xml
 timecodexml2webvtt fun-movie.xml > fun-movie.vtt
 ffmpeg -i fun-movie.mxf -i fun-movie.vtt -map 0:v? -map 0:a? -map 0:s? -c copy -map 1:s? -metadata:s:s:0 language=zxx -metadata:s:s:0 title="MediaTimecode" fun-movie.mkv
 ```
