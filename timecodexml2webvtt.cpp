@@ -39,6 +39,64 @@ struct stream_struct
     long long       frame_count;
 };
 
+// Greatest common divisor (GCD) for uint64_t
+uint64_t gcd(uint64_t a, uint64_t b) {
+    while (b != 0) {
+        uint64_t t = b;
+        b = a % b;
+        a = t;
+    }
+    return a;
+}
+
+bool ParseRational(const std::string& s, uint64_t& num, uint64_t& den) {
+    if (s.empty()) return false;
+
+    size_t pos = 0;
+    uint64_t n = 0;
+
+    // Parse integer part before '/' or '.'
+    try {
+        n = std::stoull(s, &pos);
+    }
+    catch (...) {
+        return false;
+    }
+
+    uint64_t d = 1;  // default denominator
+
+    // Fraction "a/b"
+    if (pos < s.size() && s[pos] == '/') {
+        try {
+            d = std::stoull(s.substr(pos + 1));
+        }
+        catch (...) {
+            return false;
+        }
+        if (d == 0) return false;
+    }
+    // Decimal "x.y"
+    else if (pos < s.size() && s[pos] == '.') {
+        uint64_t frac = 0;
+        uint64_t pow10 = 1;
+        for (size_t i = pos + 1; i < s.size(); ++i) {
+            char c = s[i];
+            if (c < '0' || c > '9') return false;
+            frac = frac * 10 + (c - '0');
+            pow10 *= 10;
+        }
+        n = n * pow10 + frac;
+        d = pow10;
+    }
+
+    // Reduce the fraction to lowest terms
+    uint64_t g = gcd(n, d);
+    num = n / g;
+    den = d / g;
+
+    return true;
+}
+
 void AddTimeStamp(string& content, uint64_t num, uint64_t den)
 {
     auto before_comma = num / den;
@@ -107,7 +165,6 @@ int main(int argc, char* argv[])
     }
     uint64_t time_stamp_inc = 0;
     uint64_t time_stamp_den = 0;
-    uint64_t time_stamp_num = 0;
     vector<stream_struct> streams;
     string output;
     size_t stream_pos = 0;
@@ -135,39 +192,55 @@ int main(int argc, char* argv[])
                                     stream.frame_count = atoll(value.c_str());
                                 }
                                 if (!tfsxml_strcmp_charp(n, "frame_rate")) {
-                                    size_t new_frame_rate_div;
-                                    auto new_frame_rate_num = stoull(value, &new_frame_rate_div);
-                                    unsigned long long new_frame_rate_den;
-                                    if (new_frame_rate_div < value.size() && value[new_frame_rate_div] == '/') {
-                                        new_frame_rate_div++;
-                                        new_frame_rate_den = stoull(value.substr(new_frame_rate_div));
+                                    uint64_t new_frame_rate_num, new_frame_rate_den;
+                                    if (!ParseRational(value, new_frame_rate_num, new_frame_rate_den)) {
+                                        cerr << "Error: issue when parsing the frame_rate attribute " << value << '\n';
                                     }
-                                    else {
-                                        new_frame_rate_den = 1;
+
+                                    // Handle "rounded" 1/1.001 fractions
+                                    if (value.find('.') != string::npos) {
+                                        if (new_frame_rate_den == 100) {
+                                            if (new_frame_rate_num == 2997) {
+                                                new_frame_rate_num = 30000;
+                                                new_frame_rate_den = 1001;
+                                            }
+                                            if (new_frame_rate_num == 2398) {
+                                                new_frame_rate_num = 24000;
+                                                new_frame_rate_den = 1001;
+                                            }
+                                        }
+                                        if (new_frame_rate_den == 1000) {
+                                            if (new_frame_rate_num == 2997) {
+                                                new_frame_rate_num = 30000;
+                                                new_frame_rate_den++;
+                                            }
+                                            if (new_frame_rate_num == 23976) {
+                                                new_frame_rate_num = 24000;
+                                                new_frame_rate_den = 1001;
+                                            }
+                                        }
                                     }
+
                                     if (!time_stamp_inc && !time_stamp_den) {
                                         time_stamp_den = new_frame_rate_num;
                                         time_stamp_inc = new_frame_rate_den;
                                     }
-                                    else if (new_frame_rate_num != time_stamp_den || new_frame_rate_den != time_stamp_inc)
+                                    if (new_frame_rate_num != time_stamp_den || new_frame_rate_den != time_stamp_inc)
                                     {
-                                        cerr << "Error: issue when parsing the frame_rate attribute\n";
+                                        cerr << "Error: frame rate is not same for all tracks: " << new_frame_rate_num << '/' << new_frame_rate_den << " vs " << time_stamp_den << '/' << time_stamp_inc << '\n';
                                         return 1;
                                     }
-                                    auto FramesMax = (new_frame_rate_num + new_frame_rate_den - 1) / new_frame_rate_den;
-                                    if (!FramesMax) {
-                                        cerr << "Error: issue when parsing the frame_rate attribute\n";
-                                        return 1;
-                                    }
-                                    FramesMax--;
-                                    if (FramesMax >= numeric_limits<uint32_t>::max()) {
-                                        cerr << "Error: issue when parsing the frame_rate attribute\n";
+                                    auto FramesMax = new_frame_rate_num / new_frame_rate_den - (new_frame_rate_num % new_frame_rate_den == 0);
+                                    if (FramesMax > numeric_limits<uint32_t>::max()) {
                                         return 1;
                                     }
                                     stream.timecode.SetFramesMax((uint32_t)FramesMax);
                                 }
+                                if (!tfsxml_strcmp_charp(n, "source")) {
+                                    stream.id = value;
+                                }
                                 if (!tfsxml_strcmp_charp(n, "id")) {
-                                    if (track_index == -1) {
+                                    if (track_index == -1 && stream.id.empty()) {
                                         stream.id = value;
                                     }
                                 }
@@ -203,11 +276,19 @@ int main(int argc, char* argv[])
         }
     }
     if (!time_stamp_inc || !time_stamp_den) {
-        cerr << "Error: frame rate is missing or not same for all tracks\n";
+        cerr << "Error: frame rate is missing\n";
         return 1;
     }
 
-    output += '\n';
+    output += "\n"
+        "\n"
+        "::cue {\n"
+        "    color: white;\n"
+        "    background - color: black;\n"
+        "    font - family: monospace;\n"
+        "};\n"
+        "\n";
+    uint64_t time_stamp_num = 0;
     auto active_stream_count = streams.size();
     while (active_stream_count) {
         output += '\n';
