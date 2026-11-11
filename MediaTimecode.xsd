@@ -42,7 +42,7 @@
         <xsd:attribute name="full" type="xsd:integer">
             <xsd:annotation>
                 <xsd:documentation xml:lang="en">
-                    This binary attribute notes if the evaluation of the MediaTimecode document considered the full source file or not. If full=0 then the timecode data only summarizes what can be known in a quick evaluation. If full=1 (as would happen when running 'mediainfo --ParseSpeed=1 --Output=TimecodeXML'), then the document is made from a full file evaluation so each timecode value, supported by this output, is parsed and represented in the document.
+                    This binary attribute notes if the evaluation of the MediaTimecode document considered the full source file or not. If full=0 then the timecode data only summarizes what can be known in a quick evaluation, a part of the source file was not evaluated. If full=1 (as would happen when running 'mediainfo --ParseSpeed=1 --Output=TimecodeXML', or with a quick evaluation which evaluated all the source file), then the document is made from a full file evaluation so each timecode value, supported by this output, is parsed and represented in the document.
                 </xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>
@@ -62,6 +62,13 @@
             <xsd:annotation>
                 <xsd:documentation xml:lang="en">
                     The format of the timecode stream, such as smpte-st377, smpte-st311.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="source" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation xml:lang="en">
+                    The source of the timecode stream, as labelled in the file, such as LTC or VITC.
                 </xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>
