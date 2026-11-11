@@ -39,10 +39,17 @@
                 </xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>
+        <xsd:attribute name="partial" type="xsd:integer" default="0">
+            <xsd:annotation>
+                <xsd:documentation xml:lang="en">
+                    This binary attribute notes if the evaluation of the MediaTimecode document considered only a part of the source file. If partial=1 then the timecode data only summarizes what can be known in a quick evaluation. If partial=0 or is absent (as always happens when running 'mediainfo --ParseSpeed=1 --Output=TimecodeXML', or with a quick evaluation which parsed all the file), then the document is made from a full file evaluation so each timecode value, supported by this output, is parsed and represented in the document.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
         <xsd:attribute name="full" type="xsd:integer">
             <xsd:annotation>
                 <xsd:documentation xml:lang="en">
-                    This binary attribute notes if the evaluation of the MediaTimecode document considered the full source file or not. If full=0 then the timecode data only summarizes what can be known in a quick evaluation. If full=1 (as would happen when running 'mediainfo --ParseSpeed=1 --Output=TimecodeXML'), then the document is made from a full file evaluation so each timecode value, supported by this output, is parsed and represented in the document.
+                    Deprecated, replaced by partial: full=0 is partial=1. Kept for documents created by MediaInfo up to version 26.10.
                 </xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>
@@ -62,6 +69,13 @@
             <xsd:annotation>
                 <xsd:documentation xml:lang="en">
                     The format of the timecode stream, such as smpte-st377, smpte-st311.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+        <xsd:attribute name="source" type="xsd:string">
+            <xsd:annotation>
+                <xsd:documentation xml:lang="en">
+                    The source of the timecode stream, as labelled in the file, such as LTC or VITC.
                 </xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>

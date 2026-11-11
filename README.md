@@ -31,7 +31,7 @@ Using Mediainfo daily builds from 2023-01-27 or later run:
 
 `mediainfo --ParseSpeed=1 Output=TimecodeXML file.mxf`
 
-Note: adding `--ParseSpeed=1` means that mediainfo will read through all the timecode data of the file to represent supported timecode tracks completely in the XML output. Without `--ParseSpeed=0`, the XML output will only include encough information as can be gathered in a quick scan. The resulting XML will represent if this evaluation was full or not in the `@full` attribute.
+Note: adding `--ParseSpeed=1` means that mediainfo will read through all the timecode data of the file to represent supported timecode tracks completely in the XML output. Without `--ParseSpeed=0`, the XML output will only include encough information as can be gathered in a quick scan. The resulting XML will represent if this evaluation was partial in the `@partial` attribute.
 
 ## MediaTimecode VTT
 
