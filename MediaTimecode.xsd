@@ -39,17 +39,10 @@
                 </xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>
-        <xsd:attribute name="partial" type="xsd:integer" default="0">
-            <xsd:annotation>
-                <xsd:documentation xml:lang="en">
-                    This binary attribute notes if the evaluation of the MediaTimecode document considered only a part of the source file. If partial=1 then the timecode data only summarizes what can be known in a quick evaluation. If partial=0 or is absent (as always happens when running 'mediainfo --ParseSpeed=1 --Output=TimecodeXML', or with a quick evaluation which parsed all the file), then the document is made from a full file evaluation so each timecode value, supported by this output, is parsed and represented in the document.
-                </xsd:documentation>
-            </xsd:annotation>
-        </xsd:attribute>
         <xsd:attribute name="full" type="xsd:integer">
             <xsd:annotation>
                 <xsd:documentation xml:lang="en">
-                    Deprecated, replaced by partial: full=0 is partial=1. Kept for documents created by MediaInfo up to version 26.10.
+                    This binary attribute notes if the evaluation of the MediaTimecode document considered the full source file or not. If full=0 then the timecode data only summarizes what can be known in a quick evaluation, a part of the source file was not evaluated. If full=1 (as would happen when running 'mediainfo --ParseSpeed=1 --Output=TimecodeXML', or with a quick evaluation which evaluated all the source file), then the document is made from a full file evaluation so each timecode value, supported by this output, is parsed and represented in the document.
                 </xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>
